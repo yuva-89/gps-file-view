@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 export default function RealtimeLocationTracker() {
-  const [wsUrl, setWsUrl] = useState('ws://ad8793c769c6.ngrok-free.app');
+  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  const wsUrl = `${protocol}://ad8793c769c6.ngrok-free.app`;
   const [room, setRoom] = useState('default-room');
   const [status, setStatus] = useState('disconnected');
   const [error, setError] = useState(null);
