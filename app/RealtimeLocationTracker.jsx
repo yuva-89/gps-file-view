@@ -16,17 +16,20 @@ export default function RealtimeLocationTracker() {
   const [selfLocation, setSelfLocation] = useState(null);
   const [peers, setPeers] = useState({});
 
-  // Haversine distance in km
+
   const haversine = (lat1, lon1, lat2, lon2) => {
-    const toRad = (v) => (v * Math.PI) / 180;
-    const R = 6371;
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  };
+  const toRad = (v) => (v * Math.PI) / 180;
+  const R = 6371; // Earth radius in km
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const distanceKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  console.log(distanceKm*1000+" distance in meters");
+  return distanceKm * 1000; // convert to meters
+};
+
 
   // Client-only setup
   useEffect(() => {
@@ -159,7 +162,8 @@ export default function RealtimeLocationTracker() {
 
   const distanceToPeer = (p) => {
     if (!selfLocation || !p) return null;
-    return haversine(selfLocation.lat, selfLocation.lon, p.lat, p.lon);
+    const temp= haversine(selfLocation.lat, selfLocation.lon, p.lat, p.lon);
+    return temp;
   };
 
   const statusColor = {
@@ -235,7 +239,7 @@ export default function RealtimeLocationTracker() {
             <ul className="divide-y divide-gray-200">
               {Object.entries(peers).map(([id, p]) => {
                 const dist = distanceToPeer(p);
-                const isClose = dist !== null && dist * 1000 < 10;
+                const isClose = dist !== null && dist <= 10;
                 return (
                   <li key={id} className="py-3">
                     {isClose ? (
