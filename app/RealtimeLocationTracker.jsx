@@ -1,6 +1,9 @@
+'use client'; // make sure Next.js treats this as client-side
+
 import React, { useEffect, useRef, useState } from 'react';
 
 export default function RealtimeLocationTracker() {
+  const [isClient, setIsClient] = useState(false); // client-only flag
   const [wsUrl, setWsUrl] = useState('');
   const [room, setRoom] = useState('default-room');
   const [status, setStatus] = useState('disconnected');
@@ -25,15 +28,17 @@ export default function RealtimeLocationTracker() {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   };
 
-  // Safe client-side only wsUrl setup
+  // Client-only setup
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    setWsUrl(`${protocol}://ad8793c769c6.ngrok-free.app`);
+    setIsClient(true);
+    if (typeof window !== 'undefined') {
+      const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+      setWsUrl(`${protocol}://ad8793c769c6.ngrok-free.app`);
+    }
   }, []);
 
   const connect = () => {
-    if (!wsUrl) return; // prevent connecting before wsUrl is ready
+    if (!isClient) return; // safety check
     if (wsRef.current) wsRef.current.close();
     setError(null);
     setStatus('connecting');
@@ -83,6 +88,7 @@ export default function RealtimeLocationTracker() {
   };
 
   const disconnect = () => {
+    if (!isClient) return;
     if (wsRef.current) {
       try {
         wsRef.current.send(JSON.stringify({ type: 'leave', room, id: selfId }));
@@ -97,17 +103,20 @@ export default function RealtimeLocationTracker() {
   const sendLocation = (coords) => {
     setSelfLocation(coords);
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      const payload = { type: 'location', room, id: selfId, lat: coords.lat, lon: coords.lon, ts: Date.now() };
-      wsRef.current.send(JSON.stringify(payload));
+      wsRef.current.send(
+        JSON.stringify({ type: 'location', room, id: selfId, lat: coords.lat, lon: coords.lon, ts: Date.now() })
+      );
     }
   };
 
   const startWatch = () => {
+    if (!isClient) return;
     if (!('geolocation' in navigator)) {
       setError('Geolocation not supported');
       return;
     }
     if (watchIdRef.current) return;
+
     const id = navigator.geolocation.watchPosition(
       (pos) => {
         sendLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude });
@@ -120,6 +129,7 @@ export default function RealtimeLocationTracker() {
   };
 
   const stopWatch = () => {
+    if (!isClient) return;
     if (watchIdRef.current) {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
@@ -159,6 +169,8 @@ export default function RealtimeLocationTracker() {
     error: 'bg-red-500',
   }[status];
 
+  if (!isClient) return null; // don't render anything on server
+
   return (
     <div className="p-6 max-w-3xl mx-auto bg-white rounded-2xl shadow-lg space-y-6 text-black">
       <h2 className="text-2xl font-bold flex items-center gap-2">
@@ -181,34 +193,22 @@ export default function RealtimeLocationTracker() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <button
-          onClick={connect}
-          className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
-          disabled={!wsUrl}
-        >
+        <button onClick={connect} className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700">
           Connect
         </button>
-        <button
-          onClick={disconnect}
-          className="px-4 py-2 rounded-lg bg-gray-400 text-white hover:bg-gray-500"
-        >
+        <button onClick={disconnect} className="px-4 py-2 rounded-lg bg-gray-400 text-white hover:bg-gray-500">
           Disconnect
         </button>
-        <button
-          onClick={startWatch}
-          className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-        >
+        <button onClick={startWatch} className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
           Start Sharing
         </button>
-        <button
-          onClick={stopWatch}
-          className="px-4 py-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600"
-        >
+        <button onClick={stopWatch} className="px-4 py-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600">
           Stop Sharing
         </button>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
+        {/* Connection card */}
         <div className="p-4 border rounded-lg shadow-sm space-y-2">
           <h3 className="font-semibold flex items-center gap-2">
             {status === 'connected' ? <>🛜</> : <>🛜 off</>} Connection
@@ -226,17 +226,16 @@ export default function RealtimeLocationTracker() {
           )}
         </div>
 
+        {/* Peers card */}
         <div className="p-4 border rounded-lg shadow-sm space-y-2">
-          <h3 className="font-semibold flex items-center gap-2">
-            👥 Peers ({Object.keys(peers).length})
-          </h3>
-          {Object.keys(peers).length === 0 && !selfLocation ? (
-            <p className="text-sm text-gray-500">No peers connected or location not shared yet</p>
+          <h3 className="font-semibold flex items-center gap-2">👥Peers ({Object.keys(peers).length})</h3>
+          {Object.keys(peers).length === 0 ? (
+            <p className="text-sm text-gray-500">No peers connected</p>
           ) : (
             <ul className="divide-y divide-gray-200">
               {Object.entries(peers).map(([id, p]) => {
                 const dist = distanceToPeer(p);
-                const isClose = dist !== null && dist * 1000 < 10; // <10m
+                const isClose = dist !== null && dist * 1000 < 10;
                 return (
                   <li key={id} className="py-3">
                     {isClose ? (
@@ -247,7 +246,8 @@ export default function RealtimeLocationTracker() {
                         <p>Status: Active</p>
                         <p>Email: john@example.com</p>
                         <div className="mt-1 text-xs text-gray-500">
-                          Distance: {(dist * 1000).toFixed(1)} m · Seen {new Date(p.ts).toLocaleTimeString()}
+                          Distance: {(dist * 1000).toFixed(1)} m · Seen{' '}
+                          {new Date(p.ts).toLocaleTimeString()}
                         </div>
                       </div>
                     ) : (
