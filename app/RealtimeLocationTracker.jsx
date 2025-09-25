@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Wifi, WifiOff, MapPin, Users } from 'lucide-react';
 
 export default function RealtimeLocationTracker() {
   const [wsUrl, setWsUrl] = useState('ws://ad8793c769c6.ngrok-free.app');
@@ -155,7 +154,7 @@ export default function RealtimeLocationTracker() {
   return (
     <div className="p-6 max-w-3xl mx-auto bg-white rounded-2xl shadow-lg space-y-6 text-black">
       <h2 className="text-2xl font-bold flex items-center gap-2">
-        <MapPin className="w-6 h-6 text-blue-600" />
+       📍
         Realtime Location Tracker
       </h2>
 
@@ -193,7 +192,7 @@ export default function RealtimeLocationTracker() {
         {/* Connection status card */}
         <div className="p-4 border rounded-lg shadow-sm space-y-2">
           <h3 className="font-semibold flex items-center gap-2">
-            {status === 'connected' ? <Wifi className="w-4 h-4 text-green-600" /> : <WifiOff className="w-4 h-4 text-gray-600" />}
+            {status === 'connected' ? <>🛜</>: <>🛜 off</>}
             Connection
           </h3>
           <p className="flex items-center gap-2">
@@ -212,7 +211,7 @@ export default function RealtimeLocationTracker() {
         {/* Peers card */}
         <div className="p-4 border rounded-lg shadow-sm space-y-2">
           <h3 className="font-semibold flex items-center gap-2">
-            <Users className="w-4 h-4 text-purple-600" /> Peers ({Object.keys(peers).length})
+           👥Peers ({Object.keys(peers).length})
           </h3>
           {Object.keys(peers).length === 0 ? (
             <p className="text-sm text-gray-500">No peers connected</p>
