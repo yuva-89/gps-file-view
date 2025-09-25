@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 export default function RealtimeLocationTracker() {
-  const [wsUrl,setWsUrl]=useState('')
+  const [wsUrl, setWsUrl] = useState('');
   const [room, setRoom] = useState('default-room');
   const [status, setStatus] = useState('disconnected');
   const [error, setError] = useState(null);
@@ -24,11 +24,16 @@ export default function RealtimeLocationTracker() {
       Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   };
-   useEffect(() => {
+
+  // Safe client-side only wsUrl setup
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
     setWsUrl(`${protocol}://ad8793c769c6.ngrok-free.app`);
   }, []);
+
   const connect = () => {
+    if (!wsUrl) return; // prevent connecting before wsUrl is ready
     if (wsRef.current) wsRef.current.close();
     setError(null);
     setStatus('connecting');
@@ -157,8 +162,7 @@ export default function RealtimeLocationTracker() {
   return (
     <div className="p-6 max-w-3xl mx-auto bg-white rounded-2xl shadow-lg space-y-6 text-black">
       <h2 className="text-2xl font-bold flex items-center gap-2">
-       📍
-        Realtime Location Tracker
+        📍 Realtime Location Tracker
       </h2>
 
       <div className="grid md:grid-cols-3 gap-3">
@@ -177,26 +181,37 @@ export default function RealtimeLocationTracker() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <button onClick={connect} className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700">
+        <button
+          onClick={connect}
+          className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
+          disabled={!wsUrl}
+        >
           Connect
         </button>
-        <button onClick={disconnect} className="px-4 py-2 rounded-lg bg-gray-400 text-white hover:bg-gray-500">
+        <button
+          onClick={disconnect}
+          className="px-4 py-2 rounded-lg bg-gray-400 text-white hover:bg-gray-500"
+        >
           Disconnect
         </button>
-        <button onClick={startWatch} className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+        <button
+          onClick={startWatch}
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+        >
           Start Sharing
         </button>
-        <button onClick={stopWatch} className="px-4 py-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600">
+        <button
+          onClick={stopWatch}
+          className="px-4 py-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600"
+        >
           Stop Sharing
         </button>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
-        {/* Connection status card */}
         <div className="p-4 border rounded-lg shadow-sm space-y-2">
           <h3 className="font-semibold flex items-center gap-2">
-            {status === 'connected' ? <>🛜</>: <>🛜 off</>}
-            Connection
+            {status === 'connected' ? <>🛜</> : <>🛜 off</>} Connection
           </h3>
           <p className="flex items-center gap-2">
             <span className={`w-3 h-3 rounded-full ${statusColor}`}></span>
@@ -211,22 +226,20 @@ export default function RealtimeLocationTracker() {
           )}
         </div>
 
-        {/* Peers card */}
         <div className="p-4 border rounded-lg shadow-sm space-y-2">
           <h3 className="font-semibold flex items-center gap-2">
-           👥Peers ({Object.keys(peers).length})
+            👥 Peers ({Object.keys(peers).length})
           </h3>
-          {Object.keys(peers).length === 0 ? (
-            <p className="text-sm text-gray-500">No peers connected</p>
+          {Object.keys(peers).length === 0 && !selfLocation ? (
+            <p className="text-sm text-gray-500">No peers connected or location not shared yet</p>
           ) : (
             <ul className="divide-y divide-gray-200">
               {Object.entries(peers).map(([id, p]) => {
                 const dist = distanceToPeer(p);
-                const isClose = dist !== null && dist * 1000 < 10; // convert km to meters
+                const isClose = dist !== null && dist * 1000 < 10; // <10m
                 return (
                   <li key={id} className="py-3">
                     {isClose ? (
-                      // ✅ Reveal profile-like mock data
                       <div className="p-3 border rounded-lg bg-green-50 shadow-sm">
                         <div className="font-semibold">👤 User Profile</div>
                         <p className="font-mono text-xs">ID: {id}</p>
@@ -238,7 +251,6 @@ export default function RealtimeLocationTracker() {
                         </div>
                       </div>
                     ) : (
-                      // ❌ Skeleton placeholder
                       <div className="p-3 border rounded-lg shadow-sm animate-pulse space-y-2">
                         <div className="h-4 bg-gray-300 rounded w-1/2"></div>
                         <div className="h-4 bg-gray-300 rounded w-2/3"></div>
