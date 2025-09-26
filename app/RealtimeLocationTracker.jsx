@@ -239,7 +239,7 @@ export default function RealtimeLocationTracker() {
             <ul className="divide-y divide-gray-200">
               {Object.entries(peers).map(([id, p]) => {
                 const dist = distanceToPeer(p);
-                const isClose = dist !== null && dist <= 10;
+                const isClose = dist !== null && dist <= 5;
                 return (
                   <li key={id} className="py-3">
                     {isClose ? (
