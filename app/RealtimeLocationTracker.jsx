@@ -36,7 +36,7 @@ export default function RealtimeLocationTracker() {
     setIsClient(true);
     if (typeof window !== 'undefined') {
       const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-      setWsUrl(`${protocol}://1cd024612787.ngrok-free.app`);
+      setWsUrl(`${protocol}://backend-l8nu.onrender.com`);
     }
   }, []);
 
