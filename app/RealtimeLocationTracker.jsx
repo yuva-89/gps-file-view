@@ -18,16 +18,23 @@ export default function RealtimeLocationTracker() {
 
 
   const haversine = (lat1, lon1, lat2, lon2) => {
-  const toRad = (v) => (v * Math.PI) / 180;
-  const R = 6371; // Earth radius in km
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
+   const R = 6371000; // Earth radius in meters
+
+  // Convert degrees to radians
+  const toRad = (value) => (value * Math.PI) / 180;
+  const φ1 = toRad(lat1);
+  const φ2 = toRad(lat2);
+  const Δφ = toRad(lat2 - lat1);
+  const Δλ = toRad(lon2 - lon1);
+
+  // Haversine formula
   const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  const distanceKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  console.log(distanceKm*1000+" distance in meters");
-  return distanceKm ;//* 1000;  convert to meters
+    Math.sin(Δφ / 2) ** 2 +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  console.log(R*C+" distance in meters")
+  return R * c; 
 };
 
 
