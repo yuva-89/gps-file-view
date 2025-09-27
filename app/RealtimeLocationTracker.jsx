@@ -27,7 +27,7 @@ export default function RealtimeLocationTracker() {
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
   const distanceKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   console.log(distanceKm*1000+" distance in meters");
-  return distanceKm * 1000; // convert to meters
+  return distanceKm ;//* 1000;  convert to meters
 };
 
 
