@@ -18,7 +18,7 @@ export default function RealtimeLocationTracker() {
 
 
   const haversine = (lat1, lon1, lat2, lon2) => {
-   const R = 6371000; // Earth radius in meters
+   const R = 6371; // Earth radius in meters
 
   // Convert degrees to radians
   const toRad = (value) => (value * Math.PI) / 180;
